@@ -2,6 +2,7 @@ package com.frank.directioncontrol;
 
 import android.content.Context;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Path;
@@ -19,19 +20,6 @@ import static com.frank.directioncontrol.Direction.none;
 
 public class DirectionView extends View {
     private static final String TAG = "DirectionView";
-    //左三角颜色
-    private int leftPressedColor = 0xFFFF0000;
-    private int leftNormalColor = 0xFFAA0000;
-
-    //上三角
-    private int upPressedColor = 0xFF00FF00;
-    private int upNormalColor = 0xFF00AA00;
-
-    private int rigthPressedColor = 0xFF0000FF;
-    private int rigthNormalColor = 0xFF0000AA;
-
-    private int downPressedColor = 0xFFFFFF00;
-    private int downNormalColor = 0xFFAAAA00;
 
     private int arrowPressedColor = 0xFFFFFFFF;
     private int arrowNormalColor = 0xFFAAAAAA;
@@ -48,6 +36,10 @@ public class DirectionView extends View {
     private Path pathUpArrow = new Path();
     private Path pathRigthArrow = new Path();
     private Path pathDownArrow = new Path();
+    private Path pathLeftUpArrow = new Path();
+    private Path pathRigthUpArrow = new Path();
+    private Path pathLeftDownArrow = new Path();
+    private Path pathRigthDownArrow = new Path();
     private OnDirectionListener onDirectionListener = null;
 
     public DirectionView(Context context) {
@@ -64,35 +56,18 @@ public class DirectionView extends View {
 
         // 让图形边界的锯齿模糊，看起来图形边界将更加光滑。
         paint.setAntiAlias(true);
-//        initBackgroundTriangle();
         initArrow();
     }
 
-    private void initBackgroundTriangle() {
-        pathLeft.moveTo(0, 0);
-        pathLeft.lineTo(width/2, heigth/2);
-        pathLeft.lineTo(0, heigth);
-        pathLeft.close();
-
-        pathUp.moveTo(0, 0);
-        pathUp.lineTo(width/2, heigth/2);
-        pathUp.lineTo(width, 0);
-        pathUp.close();
-
-        pathRigth.moveTo(width, 0);
-        pathRigth.lineTo(width/2, heigth/2);
-        pathRigth.lineTo(width, heigth);
-        pathRigth.close();
-
-        pathDown.moveTo(0, heigth);
-        pathDown.lineTo(width/2, heigth/2);
-        pathDown.lineTo(width, heigth);
-        pathDown.close();
+    private void initBgCircle(Canvas canvas) {
+        paint.setColor(Color.BLACK);
+        canvas.drawCircle(width/2, heigth/2, width/2, paint);
     }
+
 
     private void initArrow() {
         final int arrowWidth = width / 4;
-        final int arrowHeigth = heigth / 4;
+        final int arrowHeigth = heigth / 6;
 
         //左箭头
         int arrowStartX = width / 16;
@@ -113,32 +88,34 @@ public class DirectionView extends View {
         float bottom = arrowY + arrowHeigth / 4;
         pathLeftArrow.addRect(left, top, rigth, bottom, Path.Direction.CCW);
 
-        //右箭头
+        //上箭头
         Matrix matrix = new Matrix();
+        matrix.setRotate(90, width / 2, heigth / 2);
+        pathLeftArrow.transform(matrix, pathUpArrow);
+
+       //右箭头
         matrix.setRotate(180, width / 2, heigth / 2);
         pathLeftArrow.transform(matrix, pathRigthArrow);
 
-        //上箭头
-        arrowStartX = width / 2;
-        arrowStartY = heigth / 16;
-        arrowX = arrowStartX;
-        arrowY = arrowStartY;
-
-        pathUpArrow.moveTo(arrowX, arrowY);
-        pathUpArrow.lineTo(arrowX += arrowWidth / 2, arrowY += arrowHeigth / 2);
-        pathUpArrow.lineTo(arrowX -= arrowWidth, arrowY);
-        pathUpArrow.close();
-
-        arrowX = arrowStartX;
-        arrowY = arrowStartY;
-        left = arrowX - arrowWidth / 4;
-        top = arrowY + arrowHeigth / 2;
-        rigth = arrowX + arrowWidth / 4;
-        bottom = arrowY + arrowHeigth;
-        pathUpArrow.addRect(left, top, rigth, bottom, Path.Direction.CCW);
-
         //下箭头
-        pathUpArrow.transform(matrix, pathDownArrow);
+        matrix.setRotate(270, width / 2, heigth / 2);
+        pathLeftArrow.transform(matrix, pathDownArrow);
+
+        //左上箭头
+        matrix.setRotate(45, width / 2, heigth / 2);
+        pathLeftArrow.transform(matrix, pathLeftUpArrow);
+
+        //右上箭头
+        matrix.setRotate(135, width / 2, heigth / 2);
+        pathLeftArrow.transform(matrix, pathRigthUpArrow);
+
+        //左下箭头
+        matrix.setRotate(315, width / 2, heigth / 2);
+        pathLeftArrow.transform(matrix, pathLeftDownArrow);
+
+        //右下箭头
+        matrix.setRotate(225, width / 2, heigth / 2);
+        pathLeftArrow.transform(matrix, pathRigthDownArrow);
     }
 
     @Override
@@ -148,6 +125,7 @@ public class DirectionView extends View {
             init(canvas);
             initPath = true;
         }
+        initBgCircle(canvas);
 
         switch(currentDirection) {
             case left:
@@ -162,6 +140,18 @@ public class DirectionView extends View {
             case down:
                 drawWhenDownPressed(canvas);
                 break;
+            case left_up:
+                drawWhenLeftUpPressed(canvas);
+                break;
+            case rigth_up:
+                drawWhenRigthUpPressed(canvas);
+                break;
+            case left_down:
+                drawWhenLeftDownPressed(canvas);
+                break;
+            case rigth_down:
+                drawWhenRigthDownPressed(canvas);
+                break;
             default:
                 reset(canvas);
                 break;
@@ -170,42 +160,66 @@ public class DirectionView extends View {
     }
 
     private void drawLeftPressed(Canvas canvas) {
-        drawPath(pathLeft, leftPressedColor, canvas);
         drawPath(pathLeftArrow, arrowPressedColor, canvas);
     }
     private void drawLeftNormal(Canvas canvas) {
-        drawPath(pathLeft, leftNormalColor, canvas);
         drawPath(pathLeftArrow, arrowNormalColor, canvas);
     }
 
     private void drawUpPressed(Canvas canvas) {
-        drawPath(pathUp, upPressedColor, canvas);
         drawPath(pathUpArrow, arrowPressedColor, canvas);
     }
 
     private void drawUpNormal(Canvas canvas) {
-        drawPath(pathUp, upNormalColor, canvas);
         drawPath(pathUpArrow, arrowNormalColor, canvas);
     }
 
     private void drawRigthPressed(Canvas canvas) {
-        drawPath(pathRigth, rigthPressedColor, canvas);
         drawPath(pathRigthArrow, arrowPressedColor, canvas);
     }
 
     private void drawRigthNormal(Canvas canvas) {
-        drawPath(pathRigth, rigthNormalColor, canvas);
         drawPath(pathRigthArrow, arrowNormalColor, canvas);
     }
 
     private void drawDownPressed(Canvas canvas) {
-        drawPath(pathDown, downPressedColor, canvas);
         drawPath(pathDownArrow, arrowPressedColor, canvas);
     }
 
     private void drawDownNormal(Canvas canvas) {
-        drawPath(pathDown, downNormalColor, canvas);
         drawPath(pathDownArrow, arrowNormalColor, canvas);
+    }
+
+    private void drawLeftUpPressed(Canvas canvas) {
+        drawPath(pathLeftUpArrow, arrowPressedColor, canvas);
+    }
+
+    private void drawLeftUpNormal(Canvas canvas) {
+        drawPath(pathLeftUpArrow, arrowNormalColor, canvas);
+    }
+
+    private void drawRigthUpPressed(Canvas canvas) {
+        drawPath(pathRigthUpArrow, arrowPressedColor, canvas);
+    }
+
+    private void drawRigthUpNormal(Canvas canvas) {
+        drawPath(pathRigthUpArrow, arrowNormalColor, canvas);
+    }
+
+    private void drawLeftDownPressed(Canvas canvas) {
+        drawPath(pathLeftDownArrow, arrowPressedColor, canvas);
+    }
+
+    private void drawLeftDownNormal(Canvas canvas) {
+        drawPath(pathLeftDownArrow, arrowNormalColor, canvas);
+    }
+
+    private void drawRigthDownPressed(Canvas canvas) {
+        drawPath(pathRigthDownArrow, arrowPressedColor, canvas);
+    }
+
+    private void drawRigthDownNormal(Canvas canvas) {
+        drawPath(pathRigthDownArrow, arrowNormalColor, canvas);
     }
 
     private void drawWhenLeftPressed(Canvas canvas) {
@@ -213,6 +227,10 @@ public class DirectionView extends View {
         drawUpNormal(canvas);
         drawRigthNormal(canvas);
         drawDownNormal(canvas);
+        drawLeftUpNormal(canvas);
+        drawRigthUpNormal(canvas);
+        drawLeftDownNormal(canvas);
+        drawRigthDownNormal(canvas);
     }
 
     private void drawWhenUpPressed(Canvas canvas) {
@@ -220,6 +238,10 @@ public class DirectionView extends View {
         drawUpPressed(canvas);
         drawRigthNormal(canvas);
         drawDownNormal(canvas);
+        drawLeftUpNormal(canvas);
+        drawRigthUpNormal(canvas);
+        drawLeftDownNormal(canvas);
+        drawRigthDownNormal(canvas);
     }
 
     private void drawWhenRigthPressed(Canvas canvas) {
@@ -227,6 +249,10 @@ public class DirectionView extends View {
         drawUpNormal(canvas);
         drawRigthPressed(canvas);
         drawDownNormal(canvas);
+        drawLeftUpNormal(canvas);
+        drawRigthUpNormal(canvas);
+        drawLeftDownNormal(canvas);
+        drawRigthDownNormal(canvas);
     }
 
     private void drawWhenDownPressed(Canvas canvas) {
@@ -234,6 +260,54 @@ public class DirectionView extends View {
         drawUpNormal(canvas);
         drawRigthNormal(canvas);
         drawDownPressed(canvas);
+        drawLeftUpNormal(canvas);
+        drawRigthUpNormal(canvas);
+        drawLeftDownNormal(canvas);
+        drawRigthDownNormal(canvas);
+    }
+
+    private void drawWhenLeftUpPressed(Canvas canvas) {
+        drawLeftNormal(canvas);
+        drawUpNormal(canvas);
+        drawRigthNormal(canvas);
+        drawDownNormal(canvas);
+        drawLeftUpPressed(canvas);
+        drawRigthUpNormal(canvas);
+        drawLeftDownNormal(canvas);
+        drawRigthDownNormal(canvas);
+    }
+
+    private void drawWhenRigthUpPressed(Canvas canvas) {
+        drawLeftNormal(canvas);
+        drawUpNormal(canvas);
+        drawRigthNormal(canvas);
+        drawDownNormal(canvas);
+        drawLeftUpNormal(canvas);
+        drawRigthUpPressed(canvas);
+        drawLeftDownNormal(canvas);
+        drawRigthDownNormal(canvas);
+    }
+
+    private void drawWhenLeftDownPressed(Canvas canvas) {
+        drawLeftNormal(canvas);
+        drawUpNormal(canvas);
+        drawRigthNormal(canvas);
+        drawDownNormal(canvas);
+        drawLeftUpNormal(canvas);
+        drawRigthUpNormal(canvas);
+        drawLeftDownPressed(canvas);
+        drawRigthDownNormal(canvas);
+    }
+
+    private void drawWhenRigthDownPressed(Canvas canvas) {
+        drawLeftNormal(canvas);
+        drawUpNormal(canvas);
+        drawRigthNormal(canvas);
+        drawDownNormal(canvas);
+        drawLeftUpNormal(canvas);
+        drawRigthUpNormal(canvas);
+        drawLeftDownNormal(canvas);
+        drawRigthDownPressed(canvas);
     }
 
     private void reset(Canvas canvas) {
@@ -241,6 +315,10 @@ public class DirectionView extends View {
         drawUpNormal(canvas);
         drawRigthNormal(canvas);
         drawDownNormal(canvas);
+        drawLeftUpNormal(canvas);
+        drawRigthUpNormal(canvas);
+        drawLeftDownNormal(canvas);
+        drawRigthDownNormal(canvas);
     }
 
     private void drawPath(Path path, int color, Canvas canvas) {
@@ -257,7 +335,12 @@ public class DirectionView extends View {
         if (action == event.ACTION_DOWN ) {
             float x = event.getX();
             float y = event.getY();
-            getDirection(x, y);
+            System.out.println("width:"+width+"--heigth:"+heigth);
+            System.out.println("x:"+x+"--y:"+y);
+            float relativeX = (x - width/2) / width;
+            float relativeY = (-y + width/2) / heigth;
+            System.out.println("relativeX:"+relativeX+"--relativeY:"+relativeY);
+            getDirection(relativeX, relativeY);
             if (onDirectionListener != null) {
                 Log.e(TAG, "onTouchEvent: " + currentDirection);
                 onDirectionListener.OnDirectionChange(currentDirection);
@@ -273,22 +356,29 @@ public class DirectionView extends View {
     }
 
     private void getDirection(float x, float y) {
-        float relativeX = x / width;
-        float relativeY = y / heigth;
-        if (relativeY > relativeX ) {
-            if (relativeY > (1 - relativeX)) {
-                currentDirection = Direction.down;
-            } else {
-                currentDirection = Direction.left;
-            }
-
+//        double mod = Math.sqrt(x*x + y*y);
+        double arg = Math.round(Math.atan2(y, x) / Math.PI * 180);
+        Log.e(TAG, "getDirection: " + arg);
+        if ( (arg > -180 && arg < -157.5) ||  (arg > 157.5 && arg < 180)) {
+            currentDirection = Direction.left;
+        } else if (arg > 112.5 && arg < 157.5) {
+            currentDirection = Direction.left_up;
+        } else if (arg > 67.5 && arg < 112.5) {
+            currentDirection = Direction.up;
+        }else if (arg > 22.5 && arg < 67.5) {
+            currentDirection = Direction.rigth_up;
+        }else if (arg > -22.5 && arg < 22.5) {
+            currentDirection = Direction.rigth;
+        }else if (arg > -67.5 && arg < -22.5) {
+            currentDirection = Direction.rigth_down;
+        }else if (arg > -112.5 && arg < -67.5) {
+            currentDirection = Direction.down;
+        }else if (arg > -157.5 && arg < -112.5) {
+            currentDirection = Direction.left_down;
         } else {
-            if (relativeY > (1 - relativeX)) {
-                currentDirection = Direction.rigth;
-            } else {
-                currentDirection = Direction.up;
-            }
+            currentDirection = Direction.none;
         }
+
     }
 
     public void setOnDirectionListener(OnDirectionListener listener) {

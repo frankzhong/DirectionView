@@ -9,5 +9,9 @@ public enum Direction {
     left,
     up,
     rigth,
-    down;
+    down,
+    left_up,
+    rigth_up,
+    left_down,
+    rigth_down;
 }

@@ -77,16 +77,17 @@ public class DirectionView extends View {
 
         pathLeftArrow.moveTo(arrowX, arrowY);
         pathLeftArrow.lineTo(arrowX += arrowWidth / 2, arrowY -= arrowHeigth / 2);
-        pathLeftArrow.lineTo(arrowX, arrowY += arrowHeigth);
+        pathLeftArrow.lineTo(arrowX -= arrowWidth / 4, arrowY += arrowHeigth / 2);
+        pathLeftArrow.lineTo(arrowX += arrowWidth / 4, arrowY += arrowHeigth / 2);
         pathLeftArrow.close();
 
-        arrowX = arrowStartX;
-        arrowY = arrowStartY;
-        float left = arrowX + arrowWidth / 2;
-        float top = arrowY - arrowHeigth / 4;
-        float rigth = arrowX + arrowWidth;
-        float bottom = arrowY + arrowHeigth / 4;
-        pathLeftArrow.addRect(left, top, rigth, bottom, Path.Direction.CCW);
+//        arrowX = arrowStartX;
+//        arrowY = arrowStartY;
+//        float left = arrowX + arrowWidth / 2;
+//        float top = arrowY - arrowHeigth / 4;
+//        float rigth = arrowX + arrowWidth;
+//        float bottom = arrowY + arrowHeigth / 4;
+//        pathLeftArrow.addRect(left, top, rigth, bottom, Path.Direction.CCW);
 
         //上箭头
         Matrix matrix = new Matrix();

@@ -18,7 +18,9 @@ public class MainActivity extends AppCompatActivity {
     private DirectionView mView;
     private TextView mTextView;
     private MyView mMyView;
-    private Button mButton;
+    private Button mButton1, mButton2;
+    private ZoomView mZoomView;
+    private MyOnClickListener myOnClickListener;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -27,15 +29,26 @@ public class MainActivity extends AppCompatActivity {
         mTextView = (TextView) findViewById(R.id.textView);
         mView = (DirectionView) findViewById(R.id.directionView);
         mMyView = (MyView) findViewById(R.id.myView);
-        mButton = (Button) findViewById(R.id.button);
+        mZoomView = (ZoomView) findViewById(R.id.zoomView);
+        mButton1 = (Button) findViewById(R.id.button1);
+        mButton2 = (Button) findViewById(R.id.button2);
         mListenner = new MyOnDirectionListenner();
 //        mView = new DirectionView(this);
         mView.setOnDirectionListener(mListenner);
 
-        mButton.setOnClickListener(new View.OnClickListener() {
+        myOnClickListener = new MyOnClickListener();
+        mZoomView.setOnClickListener(myOnClickListener);
+
+        mButton1.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 startActivity(new Intent(MainActivity.this, SecondActivity.class));
+            }
+        });
+        mButton2.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startActivity(new Intent(MainActivity.this, ThirdActivity.class));
             }
         });
     }
@@ -79,4 +92,17 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     }
+
+    private class MyOnClickListener implements ZoomView.OnClickListener {
+
+        @Override
+        public void OnClick(int zoom) {
+            if (zoom == 0) {
+                Toast.makeText(MainActivity.this, "放大", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(MainActivity.this, "缩小", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
 }
